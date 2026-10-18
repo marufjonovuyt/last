@@ -13,6 +13,11 @@ from aiogram.types import (
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
+import os
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+
 
 # --- SOZLAMALAR ---
 API_KEY = "8404752815:AAHgz0IIkmzWiplkGtXxH-Y0IKxaLzySRq0"  # Telegram Bot Token
@@ -25,7 +30,20 @@ logging.basicConfig(level=logging.INFO)
 bot = Bot(token=API_KEY)
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()
+# Render uchun soxta HTTP server
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
 
+def run_dummy_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
+    server.serve_forever()
+
+# Serverni orqa fonda (background thread) ishga tushirish
+threading.Thread(target=run_dummy_server, daemon=True).start()
 # --- FSM STATES ---
 class UserState(StatesGroup):
     waiting_for_stars_amount = State()
@@ -673,6 +691,22 @@ async def admin_toggle_bot(message: Message):
 async def main():
     dp.include_router(router)
     await dp.start_polling(bot)
+
+
+# Render uchun soxta HTTP server
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+def run_dummy_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
+    server.serve_forever()
+
+# Serverni orqa fonda (background thread) ishga tushirish
+threading.Thread(target=run_dummy_server, daemon=True).start()
 
 if __name__ == "__main__":
     import asyncio
